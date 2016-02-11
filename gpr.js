@@ -6,11 +6,12 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var usage = '\n gpr [-b | -D] <pr>'
+var usage = '\n gpr [-b | -i | -D] {pr}'
 var help = usage +
     '\n\n -b: Create new branch off master with gpr prefix.\n' +
+    ' -i: Show the PR title and requestor.' +
     ' -D: Force delete the branch created.\n' +
-    ' <pr>: PR number to pull the remote branch for.';
+    ' {pr}: PR number to pull the remote branch for.';
 
 // Exit with a message
 function exit(error) {
@@ -70,16 +71,21 @@ https.get(options, function(result) {
       exit('\n Couldn\'t find PR #' + prNumber)
     }
 
+    if (args[2] === '-i') {
+      console.log('\n' + response.title, '(@' + response.user.login + ')\n');
+      process.exit();
+    };
+
     if (args[2] === '-D') {
       execho('git checkout master');
-      execho('git branch -D gpr-' + response.head.ref);
+      execho('git branch -D gpr/' + prNumber);
       process.exit();
     };
 
     if (args[2] === '-b') {
       execho('git checkout master');
-      execho('git branch gpr-' + response.head.ref);
-      execho('git checkout gpr-' + response.head.ref);
+      execho('git branch gpr/' + prNumber);
+      execho('git checkout gpr/' + prNumber);
     }
     execho("git pull " + response.head.repo.clone_url + " " + response.head.ref);
   });
