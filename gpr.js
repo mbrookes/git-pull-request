@@ -6,9 +6,9 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var usage = '\n gpr [-b | -i | -D] {pr}'
+var usage = '\n gpr [-b {branch-name} | -i | -D] {PR#}'
 var help = usage +
-    '\n\n -b: Create new branch off master with gpr prefix.\n' +
+    '\n\n -b: Create new branch {branch-name} from master. Defaults to \'grp/PR#\'\n' +
     ' -i: Show the PR title and requestor.' +
     ' -D: Force delete the branch created.\n' +
     ' {pr}: PR number to pull the remote branch for.';
@@ -71,23 +71,31 @@ https.get(options, function(result) {
       exit('\n Couldn\'t find PR #' + prNumber)
     }
 
-    if (args[2] === '-i') {
-      console.log('\n' + response.title, '(@' + response.user.login + ')\n');
-      process.exit();
-    };
+    pull = "git pull " + response.head.repo.clone_url + " " + response.head.ref;
+    branch = 'gpr/' + prNumber
 
-    if (args[2] === '-D') {
-      execho('git checkout master');
-      execho('git branch -D gpr/' + prNumber);
-      process.exit();
-    };
+    switch(args[2]) {
+      case '-i':
+        console.log('\n' + response.title, '(@' + response.user.login + ')\n');
+        process.exit();
 
-    if (args[2] === '-b') {
+      case 'pull':
+        execho(pull);
+
+      case '-D':
+        execho('git checkout master');
+        execho('git branch -D gpr/' + prNumber);
+        process.exit();
+
+      case '-b':
+        branch = args[args.length - 2]
+
+      default:
       execho('git checkout master');
-      execho('git branch gpr/' + prNumber);
+      execho('git branch ' + branch);
       execho('git checkout gpr/' + prNumber);
+      execho(pull);
     }
-    execho("git pull " + response.head.repo.clone_url + " " + response.head.ref);
   });
 
 }).on('error', function(error) {
