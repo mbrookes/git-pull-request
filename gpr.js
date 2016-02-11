@@ -8,7 +8,7 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.2.0'
+var version = 'git-pull-request 0.2.1'
 var usage = '\n gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>'
 var help = usage + '\n\n' +
 ' [-i | info]        Show the PR title and requestor for <pr#>.\n' +
@@ -71,8 +71,8 @@ function execho(command) {
   console.log(command);
   try {
     console.log(execSync(command, {encoding: 'utf8'}));
-  } catch (err) {
-   //console.error(err);
+  } catch (error) {
+   console.error(error.output[1]);
   }
 };
 
