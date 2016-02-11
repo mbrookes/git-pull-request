@@ -4,7 +4,7 @@ A node based cli utility to pull a remote branch based on a github PR number
 
 ### Installation
 
-npm install git-pull-request
+npm install -g git-pull-request
 
 ### Usage
 

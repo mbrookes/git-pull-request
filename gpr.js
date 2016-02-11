@@ -3,32 +3,41 @@
 // `git pull` from the repo and branch that a PR originates from.
 
 var https = require('https');
-//var path = require('path');
 var execSync = require('child_process').execSync;
-var exec = require('child_process').exec;
+var fs = require('fs');
 
-// Get the repo name from the package.jason in the neareast parent directory
-var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'});
-npmPrefix = npmPrefix.replace(/\s+/g, '');
-
-var packageFile = JSON.parse(require('fs').readFileSync(npmPrefix + '/package.json', 'utf8'));
-var repo = packageFile.repository.url.split('/')
-repo = repo[3]+ '/' + repo[4].slice(0, -4)
-
-var args = process.argv;
-var file = args[1].split('/');
-var usage = '\n ' + file[file.length - 1] + ' [-b | -D] <pr>'
-
+var usage = '\n gpr [-b | -D] <pr>'
 var help = usage +
     '\n\n -b: Create new branch off master with gpr prefix.\n' +
     ' -D: Force delete the branch created.\n' +
-    ' <pr>: PR number to pull the remote branch for.'
+    ' <pr>: PR number to pull the remote branch for.';
 
+// Exit with a message
 function exit(error) {
   console.log(error,'\n')
   process.exit();
 };
 
+// Exec with echo
+function execho(command) {
+  console.log('\n', command);
+  try {
+    execSync(command, function puts(error, stdout, stderr) { console.log(stdout) });
+  } catch (err) {
+   //console.error(err);
+  }
+};
+
+// Get the repo name from the package.jason in the neareast parent directory
+var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
+
+// Read the package.json and extract the repo name
+var packageFile = JSON.parse(fs.readFileSync(npmPrefix + '/package.json', 'utf8'));
+var repo = packageFile.repository.url.split('/')
+repo = repo[3]+ '/' + repo[4].slice(0, -4)
+
+// Read the command-line args
+var args = process.argv;
 if (args.length < 3) {
   exit(usage);
 } else if (args[2] == '-h' || args[2] == '--help') {
@@ -47,16 +56,6 @@ var options = {
   },
 };
 
-function puts(error, stdout, stderr) { console.log(stdout) };
-
-function execho(command) {
-  console.log('\n', command);
-  try {
-    execSync(command, puts);
-  } catch (err) {
-   //console.error(err);
-  }
-};
 https.get(options, function(result) {
   var body = '';
 
