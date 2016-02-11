@@ -6,12 +6,14 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var usage = '\n gpr [-b {branch-name} | -i | -D] {PR#}'
-var help = usage +
-    '\n\n -b: Create new branch {branch-name} from master. Defaults to \'grp/PR#\'\n' +
-    ' -i: Show the PR title and requestor.' +
-    ' -D: Force delete the branch created.\n' +
-    ' {pr}: PR number to pull the remote branch for.';
+var usage = '\n gpr [-i | pull | -b {branch-name} | -d | -D] {PR#}'
+var help = usage + '\n\n' +
+    ' -i    Show the PR title and requestor.\n' +
+    ' pull  Pull the remote branch for {PR#} to the current branch.\n' +
+    ' -b    Create new branch {branch-name} from master. Defaults to \'grp/{PR#}\'\n' +
+    ' -d    Delete the gpr/{PR#} branch.\n' +
+    ' -D    Force delete the gpr/{PR#} branch.\n' +
+    ' {PR#} PR number to apply the command to.';
 
 // Exit with a message
 function exit(error) {
@@ -81,6 +83,11 @@ https.get(options, function(result) {
 
       case 'pull':
         execho(pull);
+
+      case '-d':
+        execho('git checkout master');
+        execho('git branch -d gpr/' + prNumber);
+        process.exit();
 
       case '-D':
         execho('git checkout master');
