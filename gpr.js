@@ -8,16 +8,16 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.2.1'
+var version = 'git-pull-request 0.2.2'
 var usage = '\n gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>'
 var help = usage + '\n\n' +
 ' [-i | info]        Show the PR title and requestor for <pr#>.\n' +
 ' [-l | | ls | list] List local gpr branches.\n' +
 ' [-lsr | ls-remote] List 30 most recent open PRs.\n' +
 ' [-p | pull]        Pull the remote branch for <pr#> to the current branch.\n' +
-' [-b | branch]      Create new branch <name> from master and pull. Defaults to \'gpr-<pr#>\'\n' +
-' [-d | delete]      Delete the gpr-<pr#> branch.\n' +
-' [-D | Delete]      Force delete the gpr-<pr#> branch.\n' +
+' [-b | branch]      Create new branch <name> from master and pull. Defaults to \'gpr/<pr#>\'\n' +
+' [-d | delete]      Delete the gpr/<pr#> branch.\n' +
+' [-D | Delete]      Force delete the gpr/<pr#> branch.\n' +
 ' [-v | version]     git-pull-request version.\n' +
 ' [-h | help ]       This help.\n' +
 ' <pr#>              PR number to apply the command to.';
@@ -40,7 +40,7 @@ if (args.length < 3) {
 } else if (args[2] == '-v' || args[2] == '--version' || args[2] == 'version') {
   exit(version);
 } else if (args[2] == '-l' || args[2] == 'ls' || args[2] == 'list') {
-  execho('git branch --list gpr-*');
+  execho('git branch --list gpr/*');
   process.exit();
 } else if (args[2] == '-lsr' || args[2] == 'lsr' || args[2] == 'ls-remote') {
   var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
@@ -99,7 +99,7 @@ https.get(options, function(result) {
         };
       }
       var pull = "git pull " + response.head.repo.clone_url + " " + response.head.ref;
-      var branch = 'gpr-' + prNumber;
+      var branch = 'gpr/' + prNumber;
     };
 
     // Process args
@@ -122,12 +122,12 @@ https.get(options, function(result) {
 
       case 'delete': case '-d':
         execho('git checkout master');
-        execho('git branch -d gpr-' + prNumber);
+        execho('git branch -d gpr/' + prNumber);
         break;
 
       case 'Delete': case '-D':
         execho('git checkout master');
-        execho('git branch -D gpr-' + prNumber);
+        execho('git branch -D gpr/' + prNumber);
         break;
 
       case 'branch': case '-b':
