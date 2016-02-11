@@ -8,7 +8,7 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.2.2'
+var version = 'git-pull-request 0.2.3'
 var usage = '\n gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>'
 var help = usage + '\n\n' +
 ' [-i | info]        Show the PR title and requestor for <pr#>.\n' +
@@ -97,7 +97,11 @@ https.get(options, function(result) {
         } else {
           exit('\n Couldn\'t read data.');
         };
-      }
+      };
+
+      if (response.head.repo == null) {
+        exit('\n Couldn\'t find source repo. It may have been deleted.');
+      };
       var pull = "git pull " + response.head.repo.clone_url + " " + response.head.ref;
       var branch = 'gpr/' + prNumber;
     };
