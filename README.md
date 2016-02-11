@@ -1,2 +1,17 @@
-# git-pull-request
-A cli utility to pull a remote branch based on a github PR number
+## git-pull-request
+
+A node based cli utility to pull a remote branch based on a github PR number
+
+### Installation
+
+npm install git-pull-request
+
+### Usage
+
+``` 
+gpr [-b | -D] <pr>
+
+ -b: Create new branch off master with gpr prefix.
+ -D: Force delete the branch created.
+ <pr>: PR number to pull the remote branch for. 
+ ```

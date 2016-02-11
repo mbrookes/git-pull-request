@@ -1,0 +1,30 @@
+{
+  "name": "git-pull-request",
+  "version": "0.1.1",
+  "description": "A cli utility to pull a remote branch based on a github PR number",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin" : { 
+    "gpr" : "./gpr.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbrookes/git-pull-request.git"
+  },
+  "keywords": [
+    "git",
+    "cli",
+    "pull request",
+    "pr",
+    "pull",
+    "utility"
+  ],
+  "author": "Matt Brookes <npm@nospam.33m.co> (https://github.com/mbrookes)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mbrookes/git-pull-request/issues"
+  },
+  "homepage": "https://github.com/mbrookes/git-pull-request#readme"
+}
