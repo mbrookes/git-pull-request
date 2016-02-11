@@ -9,12 +9,16 @@ npm install -g git-pull-request
 ### Usage
 
 ```
-gpr [-i | pull | -b {branch-name} | -d | -D] {PR#}
+gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>
 
--i    Show the PR title and requestor.
-pull  Pull the remote branch for {PR#} to the current branch.
--b    Create new branch {branch-name} from master. Defaults to 'grp/{PR#}'
--d    Delete the gpr/{PR#} branch.
--D    Force delete the gpr/{PR#} branch.
-{PR#} PR number to apply the command to.
+[-i | info]        Show the PR title and requestor for <pr#>.
+[-l | | ls | list] List local gpr branches.
+[-lsr | ls-remote] List 30 most recent open PRs.
+[-p | pull]        Pull the remote branch for <pr#> to the current branch.
+[-b | branch]      Create new branch <name> from master and pull. Defaults to 'gpr-<pr#>'
+[-d | delete]      Delete the gpr-<pr#> branch.
+[-D | Delete]      Force delete the gpr-<pr#> branch.
+[-v | version]     git-pull-request version.
+[-h | help ]       This help.
+<pr#>              PR number to apply the command to. 
  ```
