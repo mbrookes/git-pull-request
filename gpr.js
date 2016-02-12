@@ -8,19 +8,20 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.2.3'
+var version = 'git-pull-request 0.2.4'
 var usage = '\n gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>'
 var help = usage + '\n\n' +
-' [-i | info]        Show the PR title and requestor for <pr#>.\n' +
-' [-l | | ls | list] List local gpr branches.\n' +
-' [-lsr | ls-remote] List 30 most recent open PRs.\n' +
-' [-p | pull]        Pull the remote branch for <pr#> to the current branch.\n' +
-' [-b | branch]      Create new branch <name> from master and pull. Defaults to \'gpr/<pr#>\'\n' +
-' [-d | delete]      Delete the gpr/<pr#> branch.\n' +
-' [-D | Delete]      Force delete the gpr/<pr#> branch.\n' +
-' [-v | version]     git-pull-request version.\n' +
-' [-h | help ]       This help.\n' +
-' <pr#>              PR number to apply the command to.';
+' [-i | info]            Show the PR title and requestor for <pr#>.\n' +
+' [-l | | ls | list]     List local gpr branches.\n' +
+' [-r | lsr | ls-remote] List 30 most recent open PRs.\n' +
+' [-c | co | checkout]   Fetch and checkout the remote branch for <pr#> without creating a local branch.\n' +
+' [-p | pull]            Pull the remote branch for <pr#> to the current branch.\n' +
+' [-b | branch]          Create new branch <name> from master and pull. Defaults to \'gpr/<pr#>\'\n' +
+' [-d | delete]          Delete the gpr/<pr#> branch.\n' +
+' [-D | Delete]          Force delete the gpr/<pr#> branch.\n' +
+' [-v | version]         git-pull-request version.\n' +
+' [-h | help]            This help.\n' +
+' <pr#>                  PR number to apply the command to.';
 
 // Get the repo name from the package.jason in the neareast parent directory
 var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
@@ -32,22 +33,27 @@ repo = repo[3]+ '/' + repo[4].slice(0, -4)
 
 // Read the command-line args
 var args = process.argv;
-// Process args that don't require the API, or setup those that do
+
 if (args.length < 3) {
   exit(usage);
-} else if (args[2] == '-h' || args[2] == '--help' || args[2] == 'help') {
-  exit(help);
-} else if (args[2] == '-v' || args[2] == '--version' || args[2] == 'version') {
-  exit(version);
-} else if (args[2] == '-l' || args[2] == 'ls' || args[2] == 'list') {
-  execho('git branch --list gpr/*');
-  process.exit();
-} else if (args[2] == '-lsr' || args[2] == 'lsr' || args[2] == 'ls-remote') {
-  var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
-} else {
-  var prNumber = args[args.length - 1];
-  if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); };
-  var path = '/repos/' + repo + '/pulls/' + prNumber;
+}
+
+// Process args that don't require the API, or setup those that do
+switch(args[2]) {
+  case 'help': case '--help': case '-h':
+    exit(help);
+  case 'version': case '--version': case '-v':
+    exit(version);
+  case 'list': case 'ls': case '-l':
+    execho('git branch --list gpr/*');
+    process.exit();
+  case 'ls-remote': case 'lsr': case '-r':
+    var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
+    break;
+  default:
+    var prNumber = args[args.length - 1];
+    if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); };
+    var path = '/repos/' + repo + '/pulls/' + prNumber;
 };
 
 // https options
@@ -102,7 +108,8 @@ https.get(options, function(result) {
       if (response.head.repo == null) {
         exit('\n Couldn\'t find source repo. It may have been deleted.');
       };
-      var pull = "git pull " + response.head.repo.clone_url + " " + response.head.ref;
+      var pull = 'git pull ' + response.head.repo.clone_url + ' ' + response.head.ref;
+      var fetch = "git fetch " + response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
       var branch = 'gpr/' + prNumber;
     };
 
@@ -112,7 +119,7 @@ https.get(options, function(result) {
         console.log('\n' + response.title, '(@' + response.user.login + ')\n');
         break;
 
-      case 'list-remote': case 'lsr': case '-lsr':
+      case 'ls-remote': case 'lsr': case '-r':
         console.log()
         response.forEach( function(pr) {
           console.log('#' + pr.number, pr.title, '(@' + pr.user.login + ')')
@@ -124,9 +131,14 @@ https.get(options, function(result) {
         execho(pull);
         break;
 
+      case 'checkout': case 'co': case '-c':
+        execho(fetch);
+        execho('git checkout FETCH_HEAD');
+        break;
+
       case 'delete': case '-d':
         execho('git checkout master');
-        execho('git branch -d gpr/' + prNumber);
+        execho('git branch -d gpr/' + prNumber) + ' master';
         break;
 
       case 'Delete': case '-D':
@@ -139,9 +151,7 @@ https.get(options, function(result) {
         // Fall through to default with new branch name
 
       default:
-      execho('git checkout master');
-      execho('git branch ' + branch);
-      execho('git checkout ' + branch);
+      execho('git checkout -B ' + branch + ' master');
       execho(pull);
     }
   });

@@ -1,6 +1,6 @@
 {
   "name": "git-pull-request",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A cli utility to pull a remote branch based on a github PR number",
   "main": "index.js",
   "scripts": {
