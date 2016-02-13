@@ -4,7 +4,17 @@ A node based cli utility to pull a remote branch based on a github PR number
 
 ### Installation
 
-npm install -g git-pull-request
+`npm install -g git-pull-request`
+
+You must have [Node.js](https://nodejs.org) installed in `/usr/local/bin/node` to use `gpr`.
+If it's anywhere else, please create an alias.
+
+`gpr` reads your repository information from the `package.json` file for your project in the current directory,
+or an ancestor directory. If you don't have one, you can create one in the root of your project using this template:
+
+```
+{"repository": {"url": "git+https://github.com/your/repository.git"}}
+```
 
 ### Usage
 
@@ -24,5 +34,5 @@ By default, gpr will fetch the remote branch for <pr#> and checkout on a detache
 [-v | version]                  Show git-pull-request version.
 [-h | help]                     This help.
 
-<pr#>                           PR number to apply the command to. 
+<pr#>                           PR number to apply the command to.
  ```
