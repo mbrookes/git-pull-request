@@ -19,9 +19,10 @@ By default, gpr will fetch the remote branch for <pr#> and checkout on a detache
 [-d | delete] <pr#>             Delete the gpr/<pr#> branch.
 [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.
 [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.
+[-n] [user:branch]              Fetch from the named ref and checkout on a detached HEAD.
 
 [-v | version]                  Show git-pull-request version.
 [-h | help]                     This help.
 
-<pr#>                           PR number to apply the command to.
+<pr#>                           PR number to apply the command to. 
  ```

@@ -8,7 +8,7 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.3.0';
+var version = 'git-pull-request 0.3.1';
 var usage = '\n gpr [-i | -l | -p | -b [name] | -d | -D | -h | -v ] <pr#>';
 var help = usage + '\n\n' +
 ' By default, gpr will fetch the remote branch for <pr#> and checkout on a detached HEAD.\n\n' +
@@ -18,7 +18,8 @@ var help = usage + '\n\n' +
 ' [-b | branch] [name] <pr#>      Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n' +
 ' [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n' +
 ' [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n' +
-' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n\n' +
+' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n' +
+' [-n] [user:branch]              Fetch from the named ref and checkout on a detached HEAD.\n\n' +
 ' [-v | version]                  Show git-pull-request version.\n' +
 ' [-h | help]                     This help.\n\n' +
 ' <pr#>                           PR number to apply the command to.';
@@ -28,8 +29,10 @@ var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).r
 
 // Read the package.json and extract the repo name
 var packageFile = JSON.parse(fs.readFileSync(npmPrefix + '/package.json', 'utf8'));
-var repo = packageFile.repository.url.split('/')
-repo = repo[3]+ '/' + repo[4].slice(0, -4)
+var repo = packageFile.repository.url.split('/');
+var repoName = repo[4].slice(0, -4);
+repo = repo[3]+ '/' + repoName;
+var path = '/repos/' + repo + '/pulls';
 
 // Read the command-line args
 var args = process.argv;
@@ -48,7 +51,6 @@ switch(args[2]) {
 
   case 'list': case 'ls': case '-l':
     if (args[3] == '-r' || args[3] == 'remote' || args[3] == 'pr' || args[3] == 'pr') {
-        var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
         break;
     }
     execho('git branch --list gpr/*');
@@ -56,13 +58,27 @@ switch(args[2]) {
 
   // Unlisted old usage - possibly deprecate, maybe keep for cool kids.
   case 'ls-remote': case 'lsr': case '-r':
-    var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
     break;
+
+  case '-n':
+    if (args.length < 4) {
+      exit(usage);
+    };
+
+    ref = args[3].split(':');
+
+    if (ref.length !== 2) {
+      exit(usage);
+    };
+
+    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + ref[1] + '\'');
+    execho('git checkout FETCH_HEAD');
+    process.exit();
 
   default:
     var prNumber = args[args.length - 1];
     if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); };
-    var path = '/repos/' + repo + '/pulls/' + prNumber;
+    var path = path + '/' + prNumber;
 };
 
 // https options
@@ -118,8 +134,6 @@ https.get(options, function(result) {
         exit('\n Couldn\'t find source repo. It may have been deleted.');
       };
       var remote = response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
-      var pull = 'git pull ' + remote
-      var fetch = 'git fetch ' + remote
     };
 
     // Colors
@@ -150,7 +164,7 @@ https.get(options, function(result) {
         break;
 
       case 'pull': case '-p':
-        execho(pull);
+        execho('git pull ' + remote);
         break;
 
       case 'delete': case '-d':
@@ -163,11 +177,6 @@ https.get(options, function(result) {
         execho('git branch -D gpr/' + prNumber);
         break;
 
-      default:
-        execho(fetch);
-        execho('git checkout FETCH_HEAD');
-        break;
-
       case 'branch': case '-b':
         if (args.length === 5) {
           var branch = args[3]
@@ -175,7 +184,12 @@ https.get(options, function(result) {
           var branch = 'gpr/' + prNumber;
         }
         execho('git checkout -B ' + branch + ' master');
-        execho(pull);
+        execho('pull ' + remote);
+        break;
+
+      default:
+        execho('git fetch ' + remote);
+        execho('git checkout FETCH_HEAD');
     }
   });
 
