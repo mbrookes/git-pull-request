@@ -23,7 +23,7 @@ var help = usage + '\n\n' +
 ' [-h | help]                     This help.\n\n' +
 ' <pr#>                           PR number to apply the command to.';
 
-// Get the repo name from the package.jason in the neareast parent directory
+// Get the repo name from the package.jaon in the neareast parent directory
 var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
 
 // Read the package.json and extract the repo name
@@ -132,6 +132,7 @@ https.get(options, function(result) {
       string = string.replace(']', ']' + reset);
       return string;
     }
+
     // Process args
     switch(args[2]) {
       case 'info': case '-i':
