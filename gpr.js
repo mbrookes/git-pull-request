@@ -8,20 +8,25 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.3.1';
-var usage = '\n gpr [-i | -l | -p | -b [name] | -d | -D | -h | -v ] <pr#>';
+var version = 'git-pull-request 0.3.2';
+var usage = '\n ' + version + '\n\n gpr [-i | -l [-r] | -p | -f | -b [<name>] | -n | -d | -D | -v | -h] <pr#>';
 var help = usage + '\n\n' +
 ' By default, gpr will fetch the remote branch for <pr#> and checkout on a detached HEAD.\n\n' +
 
 ' [-i | info] <pr#>               Show the PR title and requestor for <pr#>.\n' +
+' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n\n' +
+
 ' [-p | pull] <pr#>               Pull the remote branch for <pr#> to the current branch.\n' +
-' [-b | branch] [name] <pr#>      Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n' +
-' [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n' +
-' [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n' +
-' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n' +
+' [-f | force] <pr#>              Force overwrite the local branch and checkout on a detached HEAD.\n' +
+' [-b | branch] [<name>] <pr#>      Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n' +
 ' [-n] [user:branch]              Fetch from the named ref and checkout on a detached HEAD.\n\n' +
+
+' [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n' +
+' [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n\n' +
+
 ' [-v | version]                  Show git-pull-request version.\n' +
 ' [-h | help]                     This help.\n\n' +
+
 ' <pr#>                           PR number to apply the command to.';
 
 // Get the repo name from the package.jaon in the neareast parent directory
@@ -40,6 +45,22 @@ var args = process.argv;
 if (args.length < 3) {
   exit(usage);
 }
+
+// Exit with a message
+function exit(error) {
+  console.log(error,'\n')
+  process.exit();
+};
+
+// Exec with echo
+function execho(command) {
+  console.log(command);
+  try {
+    console.log(execSync(command, {encoding: 'utf8'}));
+  } catch (error) {
+   console.error(error.output[1]);
+  }
+};
 
 // Process args that don't require the API, or setup those that do
 switch(args[2]) {
@@ -91,22 +112,6 @@ var options = {
   },
 };
 
-// Exit with a message
-function exit(error) {
-  console.log(error,'\n')
-  process.exit();
-};
-
-// Exec with echo
-function execho(command) {
-  console.log(command);
-  try {
-    console.log(execSync(command, {encoding: 'utf8'}));
-  } catch (error) {
-   console.error(error.output[1]);
-  }
-};
-
 // Read from the API
 https.get(options, function(result) {
   var body = '';
@@ -140,25 +145,27 @@ https.get(options, function(result) {
     var reset = '\x1b[0m', red = '\x1b[31m#', green = '\x1b[32m', yellow = '\x1b[33m',
     blue = "\x1b[34m", magenta = "\x1b[35m", cyan = '\x1b[36m'
 
-    // Color [bracketed] string
-    function colorBracketed(string) {
-      string = string.replace('[', cyan + '[');
-      string = string.replace(']', ']' + reset);
-      return string;
-    }
+
+
+    function displayPr(pr) {
+      // Color [bracketed] string
+      pr.title = pr.title.replace('[', cyan + '[');
+      pr.title = pr.title.replace(']', ']' + reset);
+      console.log(red + pr.number + reset, pr.title, green + '(@' + pr.user.login + ')' + reset);
+    };
 
     // Process args
     switch(args[2]) {
       case 'info': case '-i':
-        response.title = colorBracketed(response.title);
-        console.log('\n' + response.title, green + '(@' + response.user.login + ')\n' + reset );
+        console.log();
+        displayPr(response);
+        console.log();
         break;
 
       case 'list': case 'ls': case '-l':
         console.log();
         response.forEach( function(pr) {
-          pr.title = colorBracketed(pr.title);
-          console.log(red + pr.number + reset, pr.title, green + '(@' + pr.user.login + ')' + reset);
+          displayPr(pr);
         });
         console.log();
         break;
@@ -185,6 +192,11 @@ https.get(options, function(result) {
         }
         execho('git checkout -B ' + branch + ' master');
         execho('pull ' + remote);
+        break;
+
+      case 'force': case '-f':
+        execho('git fetch -f ' + remote);
+        execho('git checkout FETCH_HEAD');
         break;
 
       default:
