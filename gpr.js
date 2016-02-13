@@ -8,20 +8,20 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.2.4'
-var usage = '\n gpr [-i | -l | -lsr | -p | -b <name> | -d | -D | -h | -v ] <pr#>'
+var version = 'git-pull-request 0.3.0';
+var usage = '\n gpr [-i | -l | -p | -b [name] | -d | -D | -h | -v ] <pr#>';
 var help = usage + '\n\n' +
-' [-i | info]            Show the PR title and requestor for <pr#>.\n' +
-' [-l | | ls | list]     List local gpr branches.\n' +
-' [-r | lsr | ls-remote] List 30 most recent open PRs.\n' +
-' [-c | co | checkout]   Fetch and checkout the remote branch for <pr#> without creating a local branch.\n' +
-' [-p | pull]            Pull the remote branch for <pr#> to the current branch.\n' +
-' [-b | branch]          Create new branch <name> from master and pull. Defaults to \'gpr/<pr#>\'\n' +
-' [-d | delete]          Delete the gpr/<pr#> branch.\n' +
-' [-D | Delete]          Force delete the gpr/<pr#> branch.\n' +
-' [-v | version]         git-pull-request version.\n' +
-' [-h | help]            This help.\n' +
-' <pr#>                  PR number to apply the command to.';
+' By default, gpr will fetch the remote branch for <pr#> and checkout on a detached HEAD.\n\n' +
+
+' [-i | info] <pr#>               Show the PR title and requestor for <pr#>.\n' +
+' [-p | pull] <pr#>               Pull the remote branch for <pr#> to the current branch.\n' +
+' [-b | branch] [name] <pr#>      Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n' +
+' [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n' +
+' [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n' +
+' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n\n' +
+' [-v | version]                  Show git-pull-request version.\n' +
+' [-h | help]                     This help.\n\n' +
+' <pr#>                           PR number to apply the command to.';
 
 // Get the repo name from the package.jason in the neareast parent directory
 var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
@@ -42,14 +42,23 @@ if (args.length < 3) {
 switch(args[2]) {
   case 'help': case '--help': case '-h':
     exit(help);
+
   case 'version': case '--version': case '-v':
-    exit(version);
+    exit('\n' + version);
+
   case 'list': case 'ls': case '-l':
+    if (args[3] == '-r' || args[3] == 'remote' || args[3] == 'pr' || args[3] == 'pr') {
+        var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
+        break;
+    }
     execho('git branch --list gpr/*');
     process.exit();
+
+  // Unlisted old usage - possibly deprecate, maybe keep for cool kids.
   case 'ls-remote': case 'lsr': case '-r':
     var path = 'https://api.github.com/repos/callemall/material-ui/pulls'
     break;
+
   default:
     var prNumber = args[args.length - 1];
     if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); };
@@ -108,32 +117,39 @@ https.get(options, function(result) {
       if (response.head.repo == null) {
         exit('\n Couldn\'t find source repo. It may have been deleted.');
       };
-      var pull = 'git pull ' + response.head.repo.clone_url + ' ' + response.head.ref;
-      var fetch = "git fetch " + response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
-      var branch = 'gpr/' + prNumber;
+      var remote = response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
+      var pull = 'git pull ' + remote
+      var fetch = 'git fetch ' + remote
     };
 
+    // Colors
+    var reset = '\x1b[0m', red = '\x1b[31m#', green = '\x1b[32m', yellow = '\x1b[33m',
+    blue = "\x1b[34m", magenta = "\x1b[35m", cyan = '\x1b[36m'
+
+    // Color [bracketed] string
+    function colorBracketed(string) {
+      string = string.replace('[', cyan + '[');
+      string = string.replace(']', ']' + reset);
+      return string;
+    }
     // Process args
     switch(args[2]) {
       case 'info': case '-i':
-        console.log('\n' + response.title, '(@' + response.user.login + ')\n');
+        response.title = colorBracketed(response.title);
+        console.log('\n' + response.title, green + '(@' + response.user.login + ')\n' + reset );
         break;
 
-      case 'ls-remote': case 'lsr': case '-r':
-        console.log()
+      case 'list': case 'ls': case '-l':
+        console.log();
         response.forEach( function(pr) {
-          console.log('#' + pr.number, pr.title, '(@' + pr.user.login + ')')
+          pr.title = colorBracketed(pr.title);
+          console.log(red + pr.number + reset, pr.title, green + '(@' + pr.user.login + ')' + reset);
         });
-        console.log()
+        console.log();
         break;
 
       case 'pull': case '-p':
         execho(pull);
-        break;
-
-      case 'checkout': case 'co': case '-c':
-        execho(fetch);
-        execho('git checkout FETCH_HEAD');
         break;
 
       case 'delete': case '-d':
@@ -146,13 +162,19 @@ https.get(options, function(result) {
         execho('git branch -D gpr/' + prNumber);
         break;
 
-      case 'branch': case '-b':
-        branch = args[args.length - 2]
-        // Fall through to default with new branch name
-
       default:
-      execho('git checkout -B ' + branch + ' master');
-      execho(pull);
+        execho(fetch);
+        execho('git checkout FETCH_HEAD');
+        break;
+
+      case 'branch': case '-b':
+        if (args.length === 5) {
+          var branch = args[3]
+        } else {
+          var branch = 'gpr/' + prNumber;
+        }
+        execho('git checkout -B ' + branch + ' master');
+        execho(pull);
     }
   });
 
