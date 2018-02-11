@@ -1,4 +1,4 @@
-#!/usr/local/bin/node
+#!/usr/bin/env node
 /**
  *`git pull` from the repo and branch that a PR originates from.
  * Copyright 2016 Matthew Brookes. License: MIT
