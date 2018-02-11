@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
  *`git pull` from the repo and branch that a PR originates from.
- * Copyright 2016 Matthew Brookes. License: MIT
+ * Copyright 2018 Matthew Brookes. License: MIT
  */
 
 var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 0.3.2';
-var usage = '\n ' + version + '\n\n gpr [-i | -l [-r] | -p | -f | -b [<name>] | -n | -d | -D | -v | -h] <pr#>';
-var help = usage + '\n\n' +
+var version = 'git-pull-request 1.0.0';
+var use = '\n ' + version + '\n\n gpr [-i | -l [-r] | -p | -f | -b [<name>] | -n | -d | -D | -v | -h] <pr#>';
+var help = use + '\n\n' +
 ' By default, gpr will fetch the remote branch for <pr#> and checkout on a detached HEAD.\n\n' +
 
 ' [-i | info] <pr#>               Show the PR title and requestor for <pr#>.\n' +
@@ -29,7 +29,9 @@ var help = usage + '\n\n' +
 
 ' <pr#>                           PR number to apply the command to.';
 
-// Get the repo name from the package.jaon in the neareast parent directory
+var usage = use + '\n\n gpr [-h | --help] for detailed usage';
+
+// Get the repo name from the package.jaon in the nearest parent directory
 var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
 
 // Read the package.json and extract the repo name
@@ -48,7 +50,7 @@ if (args.length < 3) {
 
 // Exit with a message
 function exit(error) {
-  console.log(error,'\n')
+  console.log(error,'\n');
   process.exit();
 };
 
@@ -60,7 +62,7 @@ function execho(command) {
   } catch (error) {
    console.error(error.output[1]);
   }
-};
+}
 
 // Process args that don't require the API, or setup those that do
 switch(args[2]) {
@@ -71,20 +73,16 @@ switch(args[2]) {
     exit('\n' + version);
 
   case 'list': case 'ls': case '-l':
-    if (args[3] == '-r' || args[3] == 'remote' || args[3] == 'pr' || args[3] == 'pr') {
+    if (args[3] === '-r' || args[3] === 'remote' || args[3] === 'pr' || args[3] === 'pr') {
         break;
     }
     execho('git branch --list gpr/*');
     process.exit();
 
-  // Unlisted old usage - possibly deprecate, maybe keep for cool kids.
-  case 'ls-remote': case 'lsr': case '-r':
-    break;
-
   case '-n':
     if (args.length < 4) {
       exit(usage);
-    };
+    }
 
     ref = args[3].split(':');
 
@@ -98,7 +96,7 @@ switch(args[2]) {
 
   default:
     var prNumber = args[args.length - 1];
-    if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); };
+    if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); }
     var path = path + '/' + prNumber;
 };
 
@@ -176,7 +174,7 @@ https.get(options, function(result) {
 
       case 'delete': case '-d':
         execho('git checkout master');
-        execho('git branch -d gpr/' + prNumber) + ' master';
+        execho('git branch -d gpr/' + prNumber + ' master');
         break;
 
       case 'Delete': case '-D':
