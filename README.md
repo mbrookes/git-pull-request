@@ -11,10 +11,15 @@ You must have [Node.js](https://nodejs.org) installed to use `gpr`. (You don't n
 `gpr` reads your repository information from the `package.json` file for your project in the current directory,
 or an ancestor directory. If you don't have one, you can create one in the root of your project using this template:
 
+```json
+{ 
+  "repository": { 
+    "url": "git+https://github.com/your/repository.git"
+  }
+}
 ```
-{"repository": {"url": "git+https://github.com/your/repository.git"}}
-```
-Paste into package.json and edit the github URL. This isn't a fully formed package.json, but is sufficient for `gpr`.
+Paste into `package.json` in the root of your project and edit the github URL.
+This isn't a fully formed package.json, but is sufficient for `gpr`.
 
 ### Usage
 
