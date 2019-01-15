@@ -1,13 +1,13 @@
 {
   "name": "git-pull-request",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A cli utility to pull a remote branch based on a github PR number",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin" : {
-    "gpr" : "./gpr.js"
+  "bin": {
+    "gpr": "./gpr.js"
   },
   "repository": {
     "type": "git",
@@ -28,5 +28,6 @@
   "bugs": {
     "url": "https://github.com/mbrookes/git-pull-request/issues"
   },
-  "homepage": "https://github.com/mbrookes/git-pull-request#readme"
+  "homepage": "https://github.com/mbrookes/git-pull-request#readme",
+  "dependencies": {}
 }

@@ -1,45 +1,40 @@
 #!/usr/bin/env node
 /**
  *`git pull` from the repo and branch that a PR originates from.
- * Copyright 2018 Matthew Brookes. License: MIT
+ * Copyright 2019 Matthew Brookes. License: MIT
  */
 
 var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 1.0.0';
+var version = 'git-pull-request 2.0.0';
 var use = '\n ' + version + '\n\n gpr [-i | -l [-r] | -p | -f | -b [<name>] | -n | -d | -D | -v | -h] <pr#>';
-var help = use + '\n\n' +
-' By default, gpr will fetch the remote branch for <pr#> and checkout on a detached HEAD.\n\n' +
 
-' [-i | info] <pr#>               Show the PR title and requestor for <pr#>.\n' +
-' [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n\n' +
+var hint = ' By default, `gpr <pr#>` will fetch the remote branch for <pr#> and checkout on a detached HEAD.';
 
-' [-p | pull] <pr#>               Pull the remote branch for <pr#> to the current branch.\n' +
-' [-f | force] <pr#>              Force overwrite the local branch and checkout on a detached HEAD.\n' +
-' [-b | branch] [<name>] <pr#>      Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n' +
-' [-n] [user:branch]              Fetch from the named ref and checkout on a detached HEAD.\n\n' +
+var usage = use + '\n\n' + hint + '\n\n gpr [-h | --help] for detailed usage.';
+var help = use +
 
-' [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n' +
-' [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n\n' +
+'\n\n [-i | info] <pr#>               Show the PR title and requestor for <pr#>.\n\
+ [-l | ls | list] [-r | remote]  List local gpr branches. / List 30 most recent open PRs.\n\
+\n\
+ [-u | |update | pull] <pr#>     Pull the remote branch for <pr#> to the current branch.\n\
+ [-f | force] <pr#>              Force overwrite the local branch and checkout on a detached HEAD.\n\
+ [-b | branch] [<name>] <pr#>    Create new branch [name] from master and pull. Defaults to \'gpr/<pr#>\'.\n\
+ [-n | named] <user:branch>      Fetch from the named ref and checkout on a detached HEAD.\n\
+\n\
+ [-p | push] <user:branch>       Push the current branch or detached HEAD to the remote branch.\n\
+ [-P | Push] <<user:branch>      Force push the current branch or detached HEAD to the remote branch.\n\
+\n\
+ [-d | delete] <pr#>             Delete the gpr/<pr#> branch.\n\
+ [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.\n\
+\n\
+ [-v | version]                  Show git-pull-request version.\n\
+ [-h | help]                     This help.\n\
+\n\
+ <pr#>                           PR number to apply the command to.\n\n' + hint;
 
-' [-v | version]                  Show git-pull-request version.\n' +
-' [-h | help]                     This help.\n\n' +
-
-' <pr#>                           PR number to apply the command to.';
-
-var usage = use + '\n\n gpr [-h | --help] for detailed usage';
-
-// Get the repo name from the package.jaon in the nearest parent directory
-var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
-
-// Read the package.json and extract the repo name
-var packageFile = JSON.parse(fs.readFileSync(npmPrefix + '/package.json', 'utf8'));
-var repo = packageFile.repository.url.split('/');
-var repoName = repo[4].slice(0, -4);
-repo = repo[3]+ '/' + repoName;
-var path = '/repos/' + repo + '/pulls';
 
 // Read the command-line args
 var args = process.argv;
@@ -50,7 +45,7 @@ if (args.length < 3) {
 
 // Exit with a message
 function exit(error) {
-  console.log(error,'\n');
+  console.error(error,'\n');
   process.exit();
 };
 
@@ -61,6 +56,56 @@ function execho(command) {
     console.log(execSync(command, {encoding: 'utf8'}));
   } catch (error) {
    console.error(error.output[1]);
+  }
+}
+
+try {
+  var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
+} catch (error) {}
+
+// Read the package.json and extract the repo name
+if (fs.existsSync(npmPrefix + '/package.json')) {
+  var packageFile = JSON.parse(fs.readFileSync(npmPrefix + '/package.json', 'utf8'));
+
+  // repo: [ 'https:', '', 'github.com', 'mui-org', 'material-ui.git' ],
+  var repo = packageFile.repository.url.split('/');
+
+  // repoName: 'material-ui'
+  var repoName = repo[4].slice(0, -4);
+
+  // path: '/repos/mui-org/material-ui/pulls'
+  var path = '/repos/' + repo[3]+ '/' + repoName + '/pulls';
+
+  // If there's no package.json, try .git config upstream / origin
+} else {
+  try {
+    var gitPrefix = execSync('git rev-parse --show-toplevel', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
+  } catch (error) {
+    exit(error.output[1]);
+  }
+
+  if (fs.existsSync(gitPrefix + '/.git/config')) {
+    var gitConfig = fs.readFileSync(gitPrefix + '/.git/config', 'utf8');
+
+    // repo: [ 'https:', '', 'github.com', 'mui-org', 'material-ui.git' ],
+    var repo = gitConfig.match(/\[remote "upstream"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
+
+    if (!repo) {
+      repo = gitConfig.match(/\[remote "origin"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
+      if (!repo) {
+        exit('No "upstream" or "origin" remote found in .git/config')
+      }
+    }
+    repo = repo[1].split('/');
+
+    // repoName: 'material-ui'
+    var repoName = repo[4].slice(0, -4);
+
+    // path: '/repos/mui-org/material-ui/pulls'
+    var path = '/repos/' + repo[3]+ '/' + repoName + '/pulls';
+    console.log("git without package")
+  } else {
+    exit('No package.json or .git/config found in any ancestor directory')
   }
 }
 
@@ -79,7 +124,36 @@ switch(args[2]) {
     execho('git branch --list gpr/*');
     process.exit();
 
-  case '-n':
+  case '-n': case 'named':
+    if (args.length < 4) {
+      exit(usage);
+    }
+
+    ref = args[3].split(':');
+
+    if (ref.length !== 2) {
+      exit(usage);
+    }
+
+    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + ref[1] + '\'');
+    execho('git checkout FETCH_HEAD');
+    process.exit();
+
+  case '-p': case 'push':
+    if (args.length < 4) {
+      exit(usage);
+    }
+
+    ref = args[3].split(':');
+
+    if (ref.length !== 2) {
+      exit(usage);
+    }
+
+    execho('git push ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + 'HEAD:' + ref[1] + '\'');
+    process.exit();
+
+  case '-P': case 'Push':
     if (args.length < 4) {
       exit(usage);
     }
@@ -90,15 +164,14 @@ switch(args[2]) {
       exit(usage);
     };
 
-    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + ref[1] + '\'');
-    execho('git checkout FETCH_HEAD');
+    execho('git push -f ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + 'HEAD:' + ref[1] + '\'');
     process.exit();
 
   default:
     var prNumber = args[args.length - 1];
     if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); }
-    var path = path + '/' + prNumber;
-};
+    path += '/' + prNumber;
+}
 
 // https options
 var options = {
@@ -130,18 +203,18 @@ https.get(options, function(result) {
           exit('\n Couldn\'t find PR #' + prNumber);
         } else {
           exit('\n Couldn\'t read data.');
-        };
-      };
+        }
+      }
 
       if (response.head.repo == null) {
         exit('\n Couldn\'t find source repo. It may have been deleted.');
-      };
+      }
       var remote = response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
-    };
+    }
 
     // Colors
     var reset = '\x1b[0m', red = '\x1b[31m#', green = '\x1b[32m', yellow = '\x1b[33m',
-    blue = "\x1b[34m", magenta = "\x1b[35m", cyan = '\x1b[36m'
+      blue = "\x1b[34m", magenta = "\x1b[35m", cyan = '\x1b[36m';
 
 
 
@@ -168,7 +241,7 @@ https.get(options, function(result) {
         console.log();
         break;
 
-      case 'pull': case '-p':
+      case 'update': case 'pull': case '-u':
         execho('git pull ' + remote);
         break;
 
