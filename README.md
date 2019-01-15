@@ -2,7 +2,7 @@
 
 A node based cli utility to pull a remote branch based on a github PR number
 
-##ls  NB v2.x.x breaking change
+## NB v2.x.x breaking change
 
 `-p` is now used to push, for `pull` (`update`), use `-u`
 
