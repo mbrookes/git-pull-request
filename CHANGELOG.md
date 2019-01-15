@@ -4,6 +4,8 @@
 
 - Rename -p (pull) to -u (update)
 
+# New features
+
 - Add support for pushing to a named user & branch
 
 - Add support for non JS repos (package.json no longer required)
