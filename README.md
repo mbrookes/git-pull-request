@@ -43,8 +43,8 @@ By default, gpr will fetch the remote branch for <pr#> and checkout on a detache
 [-b | branch] [<name>] <pr#>      Create new branch [name] from master and pull. Defaults to 'gpr/<pr#>'.
 [-n] [user:branch]              Fetch from the named ref and checkout on a detached HEAD.
 
-' [-p | push] <user:branch>       Push the current branch or detached HEAD to the remote branch.\n' +
-' [-P | Push] <<user:branch>      Force push the current branch or detached HEAD to the remote branch.\n' +
+[-p | push] <user:branch>       Push the current branch or detached HEAD to the remote branch.\n' +
+[-P | Push] <<user:branch>      Force push the current branch or detached HEAD to the remote branch.\n' +
 
 [-d | delete] <pr#>             Delete the gpr/<pr#> branch.
 [-D | Delete] <pr#>             Force delete the gpr/<pr#> branch.
