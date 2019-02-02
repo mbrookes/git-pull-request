@@ -8,7 +8,7 @@ var https = require('https');
 var execSync = require('child_process').execSync;
 var fs = require('fs');
 
-var version = 'git-pull-request 2.0.1';
+var version = 'git-pull-request 2.0.2';
 var use = '\n ' + version + '\n\n gpr [-i | -l [-r] | -p | -f | -b [<name>] | -n | -d | -D | -v | -h] <pr#>';
 
 var hint = ' By default, `gpr <pr#>` will fetch the remote branch for <pr#> and checkout on a detached HEAD.';
