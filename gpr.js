@@ -135,7 +135,7 @@ switch(args[2]) {
       exit(usage);
     }
 
-    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + ref[1] + '\'');
+    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + ref[1] + '"');
     execho('git checkout FETCH_HEAD');
     process.exit();
 
@@ -150,7 +150,7 @@ switch(args[2]) {
       exit(usage);
     }
 
-    execho('git push ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + 'HEAD:' + ref[1] + '\'');
+    execho('git push ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + 'HEAD:' + ref[1] + '"');
     process.exit();
 
   case '-P': case 'Push':
@@ -164,7 +164,7 @@ switch(args[2]) {
       exit(usage);
     };
 
-    execho('git push -f ' + 'https://github.com/' + ref[0] + '/' + repoName + ' \'' + 'HEAD:' + ref[1] + '\'');
+    execho('git push -f ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + 'HEAD:' + ref[1] + '"');
     process.exit();
 
   default:
@@ -209,7 +209,7 @@ https.get(options, function(result) {
       if (response.head.repo == null) {
         exit('\n Couldn\'t find source repo. It may have been deleted.');
       }
-      var remote = response.head.repo.clone_url + ' \'' + response.head.ref + '\'';
+      var remote = response.head.repo.clone_url + ' "' + response.head.ref + '"';
     }
 
     // Colors
