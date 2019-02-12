@@ -60,7 +60,7 @@ By default, gpr will fetch the remote branch for <pr#> and checkout on a detache
 The simplest use case, this pulls the remote branch for PR # 123 to a detached HEAD
 
 ```sh
-> grp 123
+> gpr 123
 
 ```
 
