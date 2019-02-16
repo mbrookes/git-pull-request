@@ -1,6 +1,6 @@
 # git-pull-request [![npm version](https://badge.fury.io/js/git-pull-request.svg)](https://badge.fury.io/js/git-pull-request)
 
-A node based cli utility to pull a remote branch based on a github PR number
+A node based cli utility to pull a remote branch based on a github PR number. gpr makes checking out a contribution locally in order to see it in action as simple as `gpr <pr`!
 
 ## NB v2.x.x breaking change
 
