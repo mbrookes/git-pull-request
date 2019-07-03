@@ -55,55 +55,95 @@ function execho(command) {
   try {
     console.log(execSync(command, {encoding: 'utf8'}));
   } catch (error) {
-   console.error(error.output[1]);
+    console.error(error.output[1]);
   }
 }
 
-try {
-  var npmPrefix = execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
-} catch (error) {}
+function getNpmPrefix(){
+  try {
+    return execSync('npm prefix', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
+  } catch (error) {}
+}
 
-// Read the package.json and extract the repo name
-if (fs.existsSync(npmPrefix + '/package.json')) {
+function getDetailsFromPackageJson(){
+  var npmPrefix = getNpmPrefix();
   var packageFile = JSON.parse(fs.readFileSync(npmPrefix + '/package.json', 'utf8'));
 
-  // repo: [ 'https:', '', 'github.com', 'mui-org', 'material-ui.git' ],
-  var repo = packageFile.repository.url.split('/');
-
-  // repoName: 'material-ui'
-  var repoName = repo[4].slice(0, -4);
-
-  // path: '/repos/mui-org/material-ui/pulls'
-  var path = '/repos/' + repo[3]+ '/' + repoName + '/pulls';
-
-  // If there's no package.json, try .git config upstream / origin
-} else {
-  try {
-    var gitPrefix = execSync('git rev-parse --show-toplevel', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
-  } catch (error) {
-    exit(error.output[1]);
-  }
-
-  if (fs.existsSync(gitPrefix + '/.git/config')) {
-    var gitConfig = fs.readFileSync(gitPrefix + '/.git/config', 'utf8');
-
+  if(packageFile.repository && packageFile.repository.url){
     // repo: [ 'https:', '', 'github.com', 'mui-org', 'material-ui.git' ],
-    var repo = gitConfig.match(/\[remote "upstream"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
-
-    if (!repo) {
-      repo = gitConfig.match(/\[remote "origin"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
-      if (!repo) {
-        exit('No "upstream" or "origin" remote found in .git/config')
-      }
-    }
-    repo = repo[1].split('/');
+    var repo = packageFile.repository.url.split('/');
 
     // repoName: 'material-ui'
     var repoName = repo[4].slice(0, -4);
 
     // path: '/repos/mui-org/material-ui/pulls'
     var path = '/repos/' + repo[3]+ '/' + repoName + '/pulls';
-    console.log("git without package")
+
+    return { repoName, path };
+  }
+
+  return null;
+}
+
+function getGitPrefix(){
+  try {
+    return execSync('git rev-parse --show-toplevel', {cwd: process.cwd(), encoding: 'utf8'}).replace(/\s+/g, '');
+  } catch (error) {
+    exit(error.output[1]);
+  }
+}
+
+function getDetailsFromGitConfig(){
+  var gitPrefix = getGitPrefix();
+
+  var gitConfig = fs.readFileSync(gitPrefix + '/.git/config', 'utf8');
+
+  // repo: [ 'https:', '', 'github.com', 'mui-org', 'material-ui.git' ],
+  var repo = gitConfig.match(/\[remote "upstream"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
+
+  if (!repo) {
+    repo = gitConfig.match(/\[remote "origin"\][\r\n|\r|\n]\s*url\s=\s(.*)/);
+    if (!repo) {
+      exit('No "upstream" or "origin" remote found in .git/config')
+    }
+  }
+  repo = repo[1].split('/');
+
+  if(repo[0].includes('git@')){
+    // repoName: 'material-ui'
+    var repoName = repo[1].slice(0, -4);
+    var namespace = repo[0].split(':')[1]
+
+    // path: '/repos/mui-org/material-ui/pulls'
+    var path = '/repos/' + namespace + '/' + repoName + '/pulls';
+  } else {
+    // repoName: 'material-ui'
+    var repoName = repo[4].slice(0, -4);
+
+    // path: '/repos/mui-org/material-ui/pulls'
+    var path = '/repos/' + repo[3]+ '/' + repoName + '/pulls';
+  }
+  console.log("git without package")
+
+  return { repoName, path };
+}
+
+var npmPrefix = getNpmPrefix();
+
+// Read the package.json and extract the repo name
+if (fs.existsSync(npmPrefix + '/package.json')) {
+  var repoDetails = getDetailsFromPackageJson();
+
+  if(!repoDetails){
+    repoDetails = getDetailsFromGitConfig();
+  }
+
+  // If there's no package.json, try .git config upstream / origin
+} else {
+  var gitPrefix = getGitPrefix();
+
+  if (fs.existsSync(gitPrefix + '/.git/config')) {
+    var repoDetails = getDetailsFromGitConfig();
   } else {
     exit('No package.json or .git/config found in any ancestor directory')
   }
@@ -119,7 +159,7 @@ switch(args[2]) {
 
   case 'list': case 'ls': case '-l':
     if (args[3] === '-r' || args[3] === 'remote' || args[3] === 'pr' || args[3] === 'pr') {
-        break;
+      break;
     }
     execho('git branch --list gpr/*');
     process.exit();
@@ -135,7 +175,7 @@ switch(args[2]) {
       exit(usage);
     }
 
-    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + ref[1] + '"');
+    execho('git fetch ' + 'https://github.com/' + ref[0] + '/' + repoDetails.repoName + ' "' + ref[1] + '"');
     execho('git checkout FETCH_HEAD');
     process.exit();
 
@@ -150,7 +190,7 @@ switch(args[2]) {
       exit(usage);
     }
 
-    execho('git push ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + 'HEAD:' + ref[1] + '"');
+    execho('git push ' + 'https://github.com/' + ref[0] + '/' + repoDetails.repoName + ' "' + 'HEAD:' + ref[1] + '"');
     process.exit();
 
   case '-P': case 'Push':
@@ -162,22 +202,23 @@ switch(args[2]) {
 
     if (ref.length !== 2) {
       exit(usage);
-    };
+    }
 
-    execho('git push -f ' + 'https://github.com/' + ref[0] + '/' + repoName + ' "' + 'HEAD:' + ref[1] + '"');
+    execho('git push -f ' + 'https://github.com/' + ref[0] + '/' + repoDetails.repoName + ' "' + 'HEAD:' + ref[1] + '"');
     process.exit();
 
   default:
     var prNumber = args[args.length - 1];
     if (~~prNumber === 0) { exit(usage + '\n\n <pr> must be a number.'); }
-    path += '/' + prNumber;
+
+    repoDetails.path += '/' + prNumber;
 }
 
 // https options
 var options = {
   hostname: 'api.github.com',
   port: 443,
-  path: path,
+  path: repoDetails.path,
   headers: {
     'User-Agent': version
   },
