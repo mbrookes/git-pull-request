@@ -1,3 +1,13 @@
+# v2.1.0
+
+## Fixes
+
+- Fallback to git config if invalid package.json found (@joshwooding)
+
+## New features
+
+- SSH support (@joshwooding)
+
 # v2.0.2
 
 ## Fixes
